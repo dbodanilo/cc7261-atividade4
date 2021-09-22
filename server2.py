@@ -25,7 +25,7 @@ def evaluation(cod, n):
     pos = cod
     while(i < n):
         pos += 1
-        if sympy.isprime(ant):
+        if sympy.isprime(pos):
             i += 1
 
     result = pos*ant
