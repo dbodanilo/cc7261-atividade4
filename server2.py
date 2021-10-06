@@ -3,6 +3,9 @@ import sympy
 import socket
 import concurrent.futures
 
+from time import perf_counter_ns
+
+from primes import *
 
 
 def resolve_thread(data, ThreadsQtdd):
@@ -21,34 +24,27 @@ def resolve_thread(data, ThreadsQtdd):
     return primos
 
 
-def eval_backward(cod, n):
-  i = 0
-  ant = cod
-  while(i < n):
-    ant -= 1
-    if sympy.isprime(ant):
-      i += 1
-  return ant
-
-def eval_forward(cod, n):
-  i = 0
-  pos = cod
-  while(i < n):
-    pos += 1
-    if sympy.isprime(pos):
-      i += 1
-  return pos
-
 def evaluation(cod, n):
-  with concurrent.futures.ThreadPoolExecutor() as executor:
-    future_ant = executor.submit(eval_backward, cod, n)
-    future_pos = executor.submit(eval_forward, cod, n)
+  start = perf_counter_ns()
 
-    return future_ant.result()*future_pos.result()       
+  with concurrent.futures.ThreadPoolExecutor() as executor:
+    future_ant = executor.submit(check_backward, cod, n)
+    future_pos = executor.submit(check_forward, cod, n)
+
+    code = future_ant.result() * future_pos.result()
+
+    end = perf_counter_ns()
+
+    t = (end - start) / 1000000
+
+    print("{:.2f}ms".format(t))
+
+    return code       
 
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-  s.bind(('127.0.0.1', 50003))
+  s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+  s.bind(('localhost', 50023))
   print(s)
   while True:
     s.listen()
