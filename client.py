@@ -26,7 +26,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
   sum_c = 0
 
   # number of 5-second runs
-  nruns = 0
+  nruns = 1
 
   for i in range(len(df)):
     start = perf_counter_ns()  

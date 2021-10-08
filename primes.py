@@ -28,12 +28,12 @@ def check_forward(cod, n, primes_cod):
 
   top = int (cod/n0 * (n0 + n))
 
-  primes_top = primes(top)
+  primes_top = primes(top)[n0:]
 
   while len(primes_top) < n:
     top *= 2 
     #print("short list")
-    primes_top = primes(top + 1)
+    primes_top = primes(top)[n0:]
   
   return primes_top[n]
 

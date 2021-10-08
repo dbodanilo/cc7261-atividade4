@@ -10,7 +10,7 @@ from primes import *
 def evaluation(cod, n):
   start = perf_counter_ns()
 
-  primes_cod = primes(cod + 1)
+  primes_cod = primes(cod)
 
   with concurrent.futures.ThreadPoolExecutor() as executor:
     future_ant = executor.submit(check_backward, n, primes_cod)
