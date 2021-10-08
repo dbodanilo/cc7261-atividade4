@@ -1,22 +1,11 @@
 import socket
-import sympy
 from time import perf_counter_ns
 
 from primes import *
 
 
 def check_inputs(cod, n):
-  start = perf_counter_ns()
- 
-  ok = cod > 1000000 and len(primes(cod)) >= 2 * n
-  
-  end = perf_counter_ns()
-
-  #print("valid" if ok else "invalid", " input")
-  t = (end - start) / 1000000
-  #print(f"{t:.2f}ms")
-
-  return ok
+  return cod > 1000000 and len(primes(cod)) >= 2 * n
 
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -40,7 +29,18 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
         #Communication with server 2
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as c:
-          if check_inputs(cod, n):
+          start = perf_counter_ns()
+          
+          ok = check_inputs(cod, n)
+          
+          end = perf_counter_ns()
+          # ms from ns
+          t = (end - start) / 1e6
+
+          #print("valid" if ok else "invalid", " input")
+          #print(f"{t:.2f}ms")
+
+          if ok:
             c.connect(("127.0.0.1", 50023))
             #print(c)
             msg = f"{cod}, {n}"

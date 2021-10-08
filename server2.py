@@ -1,33 +1,24 @@
-
-import sympy
 import socket
-import concurrent.futures
 
+from concurrent.futures import ThreadPoolExecutor
 from time import perf_counter_ns
 from primes import *
 
 
 def evaluation(cod, n):
-  start = perf_counter_ns()
-
   primes_cod = primes(cod)
 
-  with concurrent.futures.ThreadPoolExecutor() as executor:
+  with ThreadPoolExecutor() as executor:
     future_ant = executor.submit(check_backward, n, primes_cod)
     future_pos = executor.submit(check_forward, cod, n, primes_cod)
 
     left = future_ant.result()
+    #print(f"left: {left}")
+
     right = future_pos.result()
+    #print(f"right: {right}")
  
     code = left * right
-
-    end = perf_counter_ns()
-    t = (end - start) / 1000000
-
-    #print(f"left: {left}")
-    #print(f"right: {right}")
-    #print(f"code: {code}")
-    #print(f"{t:.2f}ms")
 
     return code       
 
@@ -52,8 +43,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         n = eval(dados.decode())[1]
 
         #Evalutation
+        start = perf_counter_ns()
+
         key = evaluation(cod, n)
+
+        end = perf_counter_ns()
+        # ms from ns
+        t = (end - start) / 1e6
+        #print(f"{t:.2f}ms")
         
         response = f'{key}'  
+        #print("code: ", response)
         b_response = bytes(response, 'utf-8')
         conexao.sendall(b_response)

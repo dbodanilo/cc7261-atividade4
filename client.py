@@ -1,14 +1,17 @@
 import socket
-import pandas as pd
 
+from pandas import read_csv
 from time import perf_counter_ns
 
 datafile = "file.csv"
 #datafile = input()
 
-max_runs = 50
+# test runs
+max_runs = 5
+# for each run (ms)
+time_limit = 5000
 
-df = pd.read_csv(datafile, header=None, names=['Cod', 'n'])
+df = read_csv(datafile, header=None, names=['Cod', 'n'])
 
 #initial_code = int(input("Codigo Inicial: "))
 #n = int(input("n: "))
@@ -16,60 +19,68 @@ df = pd.read_csv(datafile, header=None, names=['Cod', 'n'])
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
   s.connect(("127.0.0.1", 50022))
   print(s)
-  j = 1
-  sum_t = 0
 
-  # every 5 seconds
-  ncodes = 0
-  
-  # across all tests
-  sum_c = 0
+  # for each run 
+  run_c = 0  
+  run_t = 0
 
-  # number of 5-second runs
-  nruns = 1
+  # across all runs
+  all_c = 0
+  all_t = 0
+
+  # number of runs
+  nruns = 0
 
   for i in range(len(df)):
-    start = perf_counter_ns()  
-
     initial_code = df.loc[i, 'Cod']
     n = df.loc[i, 'n']
 
-    msg = f"{initial_code}, {n}"   
+    msg = "{}, {}".format(initial_code, n)   
     print(msg, end=": ")
 
     b_string = bytes(msg, 'utf-8')
-    s.sendall(b_string)
 
+    start = perf_counter_ns()
+
+    s.sendall(b_string)
     dados = s.recv(1024)
-    print(f"{dados.decode()}", end=" | ")
-    ncodes += 1
+    run_c += 1
+    all_c += 1
 
     finish = perf_counter_ns()
-  
-    t = (finish - start) / 1000000
-    sum_t += t
-
+    # ms from ns
+    t = (finish - start) / 1e6
     #print("{:.2f}ms".format(t))
+    run_t += t
+    all_t += t
+  
+    nruns = int(all_t / time_limit)
 
-    if sum_t > 5000:
+    print("{}".format(dados.decode()), end=" | ")
+
+    if run_t > time_limit:
       print("\n---")
-      print(f"generated {ncodes} codes") 
+      print("generated {} codes".format(run_c)) 
 
-      avg_t = sum_t / ncodes
+      avg_t = run_t / run_c
       print("average {:.2f}ms per code".format(avg_t))
-      print("---\n\n")
+      print("---\n")
 
-      sum_c += ncodes
-      nruns += 1
+      run_c = 0
+      run_t = 0
+
       if nruns >= max_runs:
         break
 
-      ncodes = 0
-      sum_t = 0
+  # s from ms
+  secs = int(time_limit/1e3)
 
+  # avoid division by zero
+  nruns = max(1, nruns)
+  avg_c = all_c * time_limit / all_t
 
   print("\n---")
-  print(f"ran {nruns} times")
-  print(f"average of {sum_c/nruns:.0f} codes per 5 seconds") 
+  print("ran for {} seconds {} times".format(secs, nruns))
+  print("average of {:.0f} codes each run".format(avg_c)) 
   print("---\n")
 
