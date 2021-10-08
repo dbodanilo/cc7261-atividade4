@@ -1,6 +1,22 @@
 import socket
 import sympy
-from primes import check_inputs
+from time import perf_counter_ns
+
+from primes import *
+
+
+def check_inputs(cod, n):
+  start = perf_counter_ns()
+ 
+  ok = cod > 1000000 and len(primes(cod)) >= 2 * n
+  
+  end = perf_counter_ns()
+
+  #print("valid" if ok else "invalid", " input")
+  t = (end - start) / 1000000
+  #print(f"{t:.2f}ms")
+
+  return ok
 
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -11,13 +27,13 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.listen()
     conexao, addr = s.accept()
     with conexao:
-      print(f"Cliente conectado: {addr}")
+      #print(f"Cliente conectado: {addr}")
       while True:
         dados = conexao.recv(1024)
         if not dados:
           break
-        print(f"Código inicial: {eval(dados.decode())[0]}")
-        print(f"n: {eval(dados.decode())[1]}")
+        #print(f"Código inicial: {eval(dados.decode())[0]}")
+        #print(f"n: {eval(dados.decode())[1]}")
 
         cod = eval(dados.decode())[0]
         n = eval(dados.decode())[1]
@@ -26,12 +42,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as c:
           if check_inputs(cod, n):
             c.connect(("127.0.0.1", 50023))
-            print(c)
+            #print(c)
             msg = f"{cod}, {n}"
             b_string = bytes(msg, 'utf-8')
             c.sendall(b_string)
             dados = c.recv(1024)
-            print(f"Resposta do servidor: {dados.decode()}")
+            #print(f"-->{dados.decode()}")
             
             response = str(dados.decode())
             b_response = bytes(response, 'utf-8')

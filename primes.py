@@ -1,10 +1,13 @@
 
-from sympy import isprime
 
 import numpy
 
+from sympy import isprime
+from scipy.special import lambertw
+from math import exp
 
-def primesfrom2to(n):
+
+def primes(n):
     """ Input n>=6, Returns a array of primes, 2 <= p < n """
     sieve = numpy.ones(n//3 + (n%6==2), dtype=numpy.bool)
     for i in range(1,int(n**0.5)//3+1):
@@ -15,36 +18,24 @@ def primesfrom2to(n):
     return numpy.r_[2,3,((3*numpy.nonzero(sieve)[0][1:]+1)|1)]
 
 
-num_primes = [0]
-
-def primes(n):
-    """ Returns  a list of primes < n """
-    sieve = [True] * n
-    for i in range(3,int(n**0.5)+1,2):
-        if sieve[i]:
-            sieve[i*i::2*i]=[False]*((n-i*i-1)//(2*i)+1)
-    return [2] + [i for i in range(3,n,2) if sieve[i]]
-
-
-def check_inputs(cod, n):
-    return cod > 1000000 and len(primesfrom2to(cod)) >= 2 * n
-
-
-def check_backward(cod, n):
-  primes_cod = primesfrom2to(cod)
-  
+def check_backward(n, primes_cod):
   return primes_cod[-n]
 
 
-def check_forward(cod, n):
-  top = 3 * n
-  primes_cod = primesfrom2to(cod + top)
+def check_forward(cod, n, primes_cod):
+  n0 = len(primes_cod) - 1
+  n2 = n0 + n
 
-  while len(primes_cod[(cod + 1):]) < n:
+  top = int (cod/n0 * (n0 + n))
+
+  primes_top = primes(top)
+
+  while len(primes_top) < n:
     top *= 2 
-    primes_cod = primesfrom2to(cod + top)
+    #print("short list")
+    primes_top = primes(top + 1)
   
-  return primes_cod[n]
+  return primes_top[n]
 
 
 def eval_backward(cod, n):
