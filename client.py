@@ -1,41 +1,49 @@
 import socket
 
+from argparse import ArgumentParser
 from pandas import read_csv
+from parse import parse
+from sys import stdin
 from time import perf_counter_ns
 
-datafile = "file.csv"
-#datafile = input()
+argparser = ArgumentParser()
+argparser.add_argument("hostname", type=str)
+argparser.add_argument("portnumber", type=int)
+args = argparser.parse_args()
+
 
 # test runs
 max_runs = 5
 # for each run (ms)
 time_limit = 5000
 
-df = read_csv(datafile, header=None, names=['Cod', 'n'])
+# for each run 
+run_c = 0  
+run_t = 0
 
-#initial_code = int(input("Codigo Inicial: "))
-#n = int(input("n: "))
+# across all runs
+all_c = 0
+all_t = 0
+
+# number of runs
+nruns = 0
+
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-  s.connect(("127.0.0.1", 50022))
+  # client -> server
+  s.connect((args.hostname, args.portnumber))
   print(s)
 
-  # for each run 
-  run_c = 0  
-  run_t = 0
+  for line in stdin:
+    result = parse("{},{}", line)
 
-  # across all runs
-  all_c = 0
-  all_t = 0
+    if result is None: 
+      break;
 
-  # number of runs
-  nruns = 0
+    initial_code = int(result[0])
+    n = int(result[1])
 
-  for i in range(len(df)):
-    initial_code = df.loc[i, 'Cod']
-    n = df.loc[i, 'n']
-
-    msg = "{}, {}".format(initial_code, n)   
+    msg = "{},{}".format(initial_code, n)
     print(msg, end=": ")
 
     b_string = bytes(msg, 'utf-8')
@@ -50,13 +58,13 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     finish = perf_counter_ns()
     # ms from ns
     t = (finish - start) / 1e6
-    #print("{:.2f}ms".format(t))
+    print("{:.2f}ms".format(t), end=" ")
     run_t += t
     all_t += t
   
     nruns = int(all_t / time_limit)
 
-    print("{}".format(dados.decode()), end=" | ")
+    print(dados.decode(), end=" | ")
 
     if run_t > time_limit:
       print("\n---")
@@ -72,13 +80,14 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
       if nruns >= max_runs:
         break
 
+
   # s from ms
   secs = int(time_limit/1e3)
-
+  
   # avoid division by zero
-  nruns = max(1, nruns)
-  avg_c = all_c * time_limit / all_t
-
+  nruns = max(nruns, 1)
+  avg_c = all_c * time_limit / max(all_t, time_limit)
+  
   print("\n---")
   print("ran for {} seconds {} times".format(secs, nruns))
   print("average of {:.0f} codes each run".format(avg_c)) 

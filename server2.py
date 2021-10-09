@@ -1,8 +1,10 @@
 import socket
 
 from concurrent.futures import ThreadPoolExecutor
-from time import perf_counter_ns
+from parse import parse
 from primes import *
+from random import randint
+from time import perf_counter_ns
 
 
 def evaluation(cod, n):
@@ -24,25 +26,30 @@ def evaluation(cod, n):
 
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-  s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-  s.bind(('localhost', 50023))
+  s.bind(('localhost', randint(49152, 65535)))
   print(s)
+
+  s.listen()
   while True:
-    s.listen()
     conexao, addr = s.accept()
     with conexao:
-      #print(f"Cliente conectado: {addr}")
+      #print("server connected: ", addr)
       while True:
         dados = conexao.recv(1024)
         if not dados:
           break
-        #print(f"Código inicial: {eval(dados.decode())[0]}")
-        #print(f"n: {eval(dados.decode())[1]}")
 
-        cod = eval(dados.decode())[0]
-        n = eval(dados.decode())[1]
+        msg = dados.decode()
+        # handle null-terminated strings
+        msg = msg.replace("\x00", "")
+  
+        result = parse("{:d},{:d}", msg) 
+        if result is None:
+          break
 
-        #Evalutation
+        cod, n = result
+
+        # evaluation
         start = perf_counter_ns()
 
         key = evaluation(cod, n)
@@ -50,9 +57,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         end = perf_counter_ns()
         # ms from ns
         t = (end - start) / 1e6
-        #print(f"{t:.2f}ms")
+        print("eval: {:.2f}ms".format(t), end=" ")
         
-        response = f'{key}'  
-        #print("code: ", response)
+        response = str(key)  
+        print("code: ", response, end=" | ")
         b_response = bytes(response, 'utf-8')
         conexao.sendall(b_response)
+

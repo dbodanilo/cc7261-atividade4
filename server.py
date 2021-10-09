@@ -1,34 +1,52 @@
 import socket
-from time import perf_counter_ns
 
+from argparse import ArgumentParser
+from parse import parse
 from primes import *
+from random import randint
+from time import perf_counter_ns
 
 
 def check_inputs(cod, n):
   return cod > 1000000 and len(primes(cod)) >= 2 * n
 
 
+argparser = ArgumentParser()
+argparser.add_argument("hostname", type=str)
+argparser.add_argument("portnumber", type=int)
+args = argparser.parse_args()
+
+
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-  s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-  s.bind(('localhost', 50022))
+  s.bind(('localhost', randint(49152, 65535)))
   print(s)
-  while True:
+
+  # Communication with server 2
+  with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as c:
+    c.connect((args.hostname, args.portnumber))
+    print(c)
+
     s.listen()
-    conexao, addr = s.accept()
-    with conexao:
-      #print(f"Cliente conectado: {addr}")
-      while True:
-        dados = conexao.recv(1024)
-        if not dados:
-          break
-        #print(f"Código inicial: {eval(dados.decode())[0]}")
-        #print(f"n: {eval(dados.decode())[1]}")
+    while True:
+      conexao, addr = s.accept()
+      with conexao:
+        #print("client connected: ", addr)
+        while True:
+          dados = conexao.recv(1024)
+          if not dados:
+            break
 
-        cod = eval(dados.decode())[0]
-        n = eval(dados.decode())[1]
-
-        #Communication with server 2
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as c:
+          msg = dados.decode()
+          # handle null-terminated strings
+          msg = msg.replace("\x00", "")
+  
+          parsed = parse("{},{}", msg)
+          if parsed is None:
+            break
+  
+          cod = int(parsed[0])
+          n = int(parsed[1])
+  
           start = perf_counter_ns()
           
           ok = check_inputs(cod, n)
@@ -36,22 +54,19 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
           end = perf_counter_ns()
           # ms from ns
           t = (end - start) / 1e6
-
-          #print("valid" if ok else "invalid", " input")
-          #print(f"{t:.2f}ms")
+          print("check: {:.2f}ms".format(t), end=" ")
+  
+          b_response = b'invalid input'
 
           if ok:
-            c.connect(("127.0.0.1", 50023))
-            #print(c)
-            msg = f"{cod}, {n}"
+            msg = "{},{}".format(cod, n)
             b_string = bytes(msg, 'utf-8')
             c.sendall(b_string)
             dados = c.recv(1024)
-            #print(f"-->{dados.decode()}")
             
-            response = str(dados.decode())
+            response = dados.decode()
+            print(response, end=" | ")
             b_response = bytes(response, 'utf-8')
-          else:
-            b_response = b'Invalid Inputs'
-            
-        conexao.sendall(b_response)
+          
+          conexao.sendall(b_response)
+
