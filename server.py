@@ -2,13 +2,13 @@ import socket
 
 from argparse import ArgumentParser
 from parse import parse
-from primes import *
+from primes import n_primes
 from random import randint
 from time import perf_counter_ns
 
 
 def check_inputs(cod, n):
-  return cod > 1000000 and len(primes(cod)) >= 2 * n
+  return cod > 1000000 and n_primes(2 * n)[-1] < cod
 
 
 argparser = ArgumentParser()

@@ -6,14 +6,16 @@ from parse import parse
 from sys import stdin
 from time import perf_counter_ns
 
+
 argparser = ArgumentParser()
 argparser.add_argument("hostname", type=str)
 argparser.add_argument("portnumber", type=int)
+argparser.add_argument("max_runs", type=int)
 args = argparser.parse_args()
 
 
 # test runs
-max_runs = 5
+max_runs = 5 if args.max_runs is None else args.max_runs
 # for each run (ms)
 time_limit = 5000
 

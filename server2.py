@@ -2,17 +2,18 @@ import socket
 
 from concurrent.futures import ThreadPoolExecutor
 from parse import parse
-from primes import *
+from primes import check_backward, check_forward, primes
 from random import randint
 from time import perf_counter_ns
 
 
 def evaluation(cod, n):
   primes_cod = primes(cod)
+  nprimes_cod = len(primes_cod)
 
   with ThreadPoolExecutor() as executor:
-    future_ant = executor.submit(check_backward, n, primes_cod)
-    future_pos = executor.submit(check_forward, cod, n, primes_cod)
+    future_ant = executor.submit(check_backward, primes_cod, n)
+    future_pos = executor.submit(check_forward, nprimes_cod, n)
 
     left = future_ant.result()
     #print(f"left: {left}")
@@ -22,7 +23,7 @@ def evaluation(cod, n):
  
     code = left * right
 
-    return code       
+    return code
 
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
